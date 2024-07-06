@@ -1,3 +1,3 @@
-# k8s-tui
+# k8li
 
-This repository contains tool(s) intended to facility the work with kubernetes.
+k8li is a wrapper script that facilitates your common tasks surrounding Kubernetes. 
