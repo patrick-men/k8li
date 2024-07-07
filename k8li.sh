@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#TODO: add colors to the output
-
 source funcs.sh
 source constants.sh
 
