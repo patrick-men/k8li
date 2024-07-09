@@ -27,7 +27,7 @@ blue_text() {
 display_help() {
     blue_text "k8li - A simple kubectl wrapper for common tasks"
     echo
-    blue_text "Usage: k8li [ACTION] [RESOURCE]"
+    blue_text "Usage: k8li [ACTION] [RESOURCE] [NAMESPACE]"
     echo
     green_text "Actions: The available arguments are the respective kubectl actions. The following are the most common ones:"
     yellow_text "  h, help               Show this help message"
@@ -54,6 +54,12 @@ display_help() {
     yellow_text "  tenant                Interact with a tenant"
     echo 
     yellow_text "  any other resource    Opens a fzf for you to pick your resource"
+    echo
+    green_text "Namespace:"
+    yellow_text "  <empty>               Uses current namespace"
+    yellow_text "  ns, typo in namespace Opens a fzf for you to pick a namespace"
+    yellow_text "  A                     Enables fzf through namespaces (-A)"
+    echo
     exit 0
 }
 
@@ -83,11 +89,13 @@ parse_arguments() {
 
 # check if a namespace was provided and if it exists
 check_namespace() {
-    if [[ $num_args == 3 && -n $(kubectl get namespaces --no-headers -o custom-columns=NAME:.metadata.name | grep -i "$namespace") ]]; then
+    if [[ $num_args == 3 && $namespace != "ns" && $namespace != "A" && -n $(kubectl get namespaces --no-headers -o custom-columns=NAME:.metadata.name | grep -i "$namespace") ]]; then
         query_namespace="-n $namespace"
-    elif [[ $num_args == 3 && -z $(kubectl get namespaces --no-headers -o custom-columns=NAME:.metadata.name | grep -i "$namespace") ]]; then
+    elif [[ $num_args == 3 && $namespace == "ns" ]]; then
         namespace=$(kubectl get namespaces --no-headers -o custom-columns=NAME:.metadata.name | fzf --prompt "Namespace: ")
         query_namespace="-n $namespace"
+    elif [[ $num_args == 3 && $namespace == "A" ]]; then
+        query_namespace="-A"
     else
         namespace="$(kubectl config view --minify --output 'jsonpath={..namespace}')" || namespace="default"
         query_namespace=""
@@ -120,10 +128,20 @@ select_action() {
 
 # function that takes the kubectl output and runs fzf on the names
 name_fzf() {
-    output=$(kubectl get $resource $query_namespace | awk 'NR>1 {print $1}')
+    # if `kubectl get` fails, the error message is suppressed and the script continues
+    output=$(kubectl get $resource $query_namespace --no-headers 2>&1) || true
     if [[ -z "$output" ]]; then
         exit 1
+    elif [[ $namespace == "-A" ]]; then
+        output=$(echo "$output" | awk '{print $2}')
+        name=$(echo "$output" | fzf --prompt "$resource: ")
+        green_text "Selected $resource: $name\n"
+    # if the resource doesn't exist in the namespace, send error message
+    elif [[ $output =~ "No resources found" ]]; then
+        red_text "The resource $resource does not exist in the namespace $namespace."
+        exit 1
     else
+        output=$(echo "$output" | awk '{print $1}')
         name=$(echo "$output" | fzf --prompt "$resource: ")
         green_text "Selected $resource: $name\n"    
     fi
@@ -152,12 +170,20 @@ execute_action() {
         kubectl describe $resource $name $query_namespace 2>/tmp/k8li-error$timestamp || red_text "The command failed. Please check /tmp/k8li-error$timestamp for the error message."
         ;;
     "b" | "bash")
-        blue_text "Command: kubectl exec -it $name $query_namespace -- bash\n"
-        kubectl exec -it $name $query_namespace -- bash 2>/tmp/k8li-error$timestamp || red_text "The command failed. Please check /tmp/k8li-error$timestamp for the error message."
+        if [[ $resource == "po" || $resource == "pod" ]]; then
+            blue_text "Command: kubectl exec -it $name $query_namespace -- bash\n"
+            kubectl exec -it $name $query_namespace -- bash 2>/tmp/k8li-error$timestamp || red_text "The command failed. Please check /tmp/k8li-error$timestamp for the error message."
+        else
+            red_text "The resource $resource does not have a shell."
+        fi
         ;;
     "s" | "sh")
-        blue_text "Command: kubectl exec -it $name $query_namespace -- sh\n"
-        kubectl exec -it $name $query_namespace -- sh 2>/tmp/k8li-error$timestamp || red_text "The command failed. Please check /tmp/k8li-error$timestamp for the error message."
+        if [[ $resource == "po" || $resource == "pod" ]]; then
+            blue_text "Command: kubectl exec -it $name $query_namespace -- sh\n"
+            kubectl exec -it $name $query_namespace -- sh 2>/tmp/k8li-error$timestamp || red_text "The command failed. Please check /tmp/k8li-error$timestamp for the error message."
+        else
+            red_text "The resource $resource does not have a shell."
+        fi
         ;;
     "y" | "yaml")
         blue_text "Command: kubectl get $resource $name -o yaml $query_namespace\n"
@@ -168,12 +194,29 @@ execute_action() {
         kubectl get $resource $name -w $query_namespace 2>/tmp/k8li-error$timestamp || red_text "The command failed. Please check /tmp/k8li-error$timestamp for the error message."
         ;;
     "i" | "ip")
-        blue_text "Command: kubectl get $resource $name -o jsonpath='{.status.podIP}' $query_namespace\n"
-        kubectl get $resource $name -o jsonpath='{.status.podIP}' $query_namespace 2>/tmp/k8li-error$timestamp || red_text "The command failed. Please check /tmp/k8li-error$timestamp for the error message."
+        if [[ $resource == "po" || $resource == "pod" ]]; then
+            blue_text "Command: kubectl get $resource $name -o jsonpath='{.status.podIP}' $query_namespace\n"
+            kubectl get $resource $name -o jsonpath='{.status.podIP}' $query_namespace 2>/tmp/k8li-error$timestamp || red_text "The command failed. Please check /tmp/k8li-error$timestamp for the error message."
+        elif [[ $resource == "svc" || $resource == "service" ]]; then
+            blue_text "Command: kubectl get $resource $name -o jsonpath='{.spec.clusterIP}' $query_namespace\n"
+            kubectl get $resource $name -o jsonpath='{.spec.clusterIP}' $query_namespace 2>/tmp/k8li-error$timestamp || red_text "The command failed. Please check /tmp/k8li-error$timestamp for the error message."
+        elif [[ $resource == "ing" || $resource == "ingress" ]]; then
+            blue_text "Command: kubectl get $resource $name -o jsonpath='{.status.loadBalancer.ingress[0].ip}' $query_namespace\n"
+            kubectl get $resource $name -o jsonpath='{.status.loadBalancer.ingress[0].ip}' $query_namespace 2>/tmp/k8li-error$timestamp || red_text "The command failed. Please check /tmp/k8li-error$timestamp for the error message."
+        elif [[ $resource == "no" || $resource == "node" ]]; then
+            blue_text "Command: kubectl get $resource $name -o jsonpath='{.status.addresses[?(@.type==\"InternalIP\")].address}' $query_namespace\n"
+            kubectl get $resource $name -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}' $query_namespace 2>/tmp/k8li-error$timestamp || red_text "The command failed. Please check /tmp/k8li-error$timestamp for the error message."
+        else
+            red_text "The resource $resource does not have an IP address."
+        fi
         ;;
     "rr" | "rollout restart")
+        if [[ $resource == "deploy" || $resource == "deployment" ]]; then
         blue_text "Command: kubectl rollout restart $resource $name $query_namespace\n"
         kubectl rollout restart $resource $name $query_namespace 2>/tmp/k8li-error$timestamp || red_text "The command failed. Please check /tmp/k8li-error$timestamp for the error message."
+        else 
+            red_text "The resource $resource does not support rollouts."
+        fi
         ;;
     *)
         blue_text "Command: kubectl $action $resource $name $query_namespace\n"

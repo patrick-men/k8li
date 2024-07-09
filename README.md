@@ -4,13 +4,13 @@
 
 ## Usage
 
-`k8li` is designed as a tool to help you out with common tasks revolving a single resource. The most common ones being implemented, such as `describe`, `-o wide` as wide, `-o yaml` as yaml, `exec -it -- bash`, and more. 
+`k8li` is designed as a tool to help you out with common tasks revolving a single resource. This is achieved by skipping the `kubectl get XY`, followed by copy pasting the name, and only then being able to run your desired command. Using `k8li`, you can do all that in a single command.
 
-Thanks to [`fzf`](https://github.com/junegunn/fzf), it's possible to use both actions and resources outside of the ones listed below.
+Thanks to [`fzf`](https://github.com/junegunn/fzf), it's possible to use both actions and resources outside of the ones listed below. This means that if you want more than the wrapper currently offers, or you make a typo, you'll receive a `fzf` with every resource and every action available on your cluster.
 
 ```text
 k8li - A simple kubectl wrapper for common tasks
-Usage: k8li [ACTION] [RESOURCE]
+Usage: k8li [ACTION] [RESOURCE] [NAMESPACE]
 Actions: The available arguments are the respective kubectl actions. The following are the most common ones:
   h, help               Show this help message
   w, wide               Show more information
@@ -23,9 +23,9 @@ Actions: The available arguments are the respective kubectl actions. The followi
   f, follow             Watch a resource
   i, ip                 Get the IP address of a resource
   rr, rollout restart   Restart a rollout
-  other                 Opens a fzf for you to pick an action
+  other, typo           Opens a fzf for you to pick an action
 
-Resources:"
+Resources:
   po, pod               Interact with a pod
   deploy, deployment    Interact with a deployment
   svc, service          Interact with a service
@@ -34,7 +34,13 @@ Resources:"
   secret                Interact with a secret
   cm, configmap         Interact with a configmap
   tenant                Interact with a tenant
-  any other resource    Opens a fzf for you to pick your resource
+  other, typo           Opens a fzf for you to pick your resource
+
+Namespace:
+  <empty>               Uses current namespace
+  typo                  Opens a fzf for you to pick a namespace
+  A                     Enables fzf through namespaces (-A)
+
 ```
 
 ## Installation
