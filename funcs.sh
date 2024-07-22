@@ -162,7 +162,7 @@ execute_action() {
         kubectl get $resource $name $query_namespace 2>/tmp/k8li-error$timestamp || red_text "The command failed. Please check /tmp/k8li-error$timestamp for the error message."
         ;;
     "l" | "logs")
-        blue_text "Command: kubectl logs $resource $name $query_namespace\n"
+        blue_text "Command: kubectl logs $name $query_namespace\n"
         kubectl logs $resource $name $query_namespace 2>/tmp/k8li-error$timestamp || red_text "The command failed. Please check /tmp/k8li-error$timestamp for the error message."
         ;;
     "d" | "describe")
