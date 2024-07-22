@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#TOOD: refactor the if [ -t 1] > this is a check to see if the output is a terminal, required to be able to pipe the outputs into anything
+
 # functions to add color to outputs
 color_reset=$(tput sgr0)
 red=$(tput setaf 1)
@@ -87,12 +89,18 @@ parse_arguments() {
     fi
 }
 
-# check if a namespace was provided and if it exists
 check_namespace() {
-    if [[ $num_args == 3 && $namespace != "ns" && $namespace != "A" && -n $(kubectl get namespaces --no-headers -o custom-columns=NAME:.metadata.name | grep -i "$namespace") ]]; then
-        query_namespace="-n $namespace"
+    if [[ $num_args == 3 && $namespace != "ns" && $namespace != "A" ]]; then
+        if kubectl get namespace "$namespace" > /dev/null 2>&1; then
+            query_namespace="-n $namespace"
+        else
+            namespace_list=$(kubectl get namespaces --no-headers -o custom-columns=NAME:.metadata.name)
+            namespace=$(echo "$namespace_list" | fzf --prompt "Namespace: ")
+            query_namespace="-n $namespace"
+        fi
     elif [[ $num_args == 3 && $namespace == "ns" ]]; then
-        namespace=$(kubectl get namespaces --no-headers -o custom-columns=NAME:.metadata.name | fzf --prompt "Namespace: ")
+        namespace_list=$(kubectl get namespaces --no-headers -o custom-columns=NAME:.metadata.name)
+        namespace=$(echo "$namespace_list" | fzf --prompt "Namespace: ")
         query_namespace="-n $namespace"
     elif [[ $num_args == 3 && $namespace == "A" ]]; then
         query_namespace="-A"
@@ -103,7 +111,11 @@ check_namespace() {
 
     if [ -t 1 ]; then
         # Output is a terminal, print the namespace
-        green_text "\nNamespace: $namespace"
+        if [[ $namespace == "A" ]]; then
+            green_text "\nNamespace: all"
+        else
+            green_text "\nNamespace: $namespace"
+        fi
     fi
 }
 # if resource isn't part of the list, then fzf through all resources
@@ -134,8 +146,8 @@ name_fzf() {
     output=$(kubectl get $resource $query_namespace --no-headers 2>&1) || true
     if [[ -z "$output" ]]; then
         exit 1
-    elif [[ $namespace == "-A" ]]; then
-        output=$(echo "$output" | awk '{print $2}')
+    elif [[ $namespace == "A" ]]; then
+        output=$(echo "$output" | awk '{print $1}')
         name=$(echo "$output" | fzf --prompt "$resource: ")
         if [ -t 1 ]; then
             # Output is a terminal, print the selected resource
@@ -154,8 +166,6 @@ name_fzf() {
         fi
     fi
 }
-
-#TOOD: refactor the if [ -t 1] > this is a check to see if the output is a terminal, required to be able to pipe the outputs into anything
 
 # function that executes the kubectl commands
 execute_action() {
