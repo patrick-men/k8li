@@ -63,4 +63,6 @@ echo "alias k8li='$(pwd)/k8li.sh'" >> ~/.zshrc
 source ~/.zshrc
 ```
 
+> best is to run `git pull` every once in a while, as smaller patches/bigfixes are released spontaneously
+
 If you plan on running `k8li` without an alias, consider following how-to's such as [this one](https://stackoverflow.com/questions/20054538/add-a-bash-script-to-path).
