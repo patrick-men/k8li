@@ -118,10 +118,12 @@ check_namespace() {
         fi
     fi
 }
+
 # if resource isn't part of the list, then fzf through all resources
 select_resource() {
     if [[ ! " ${available_resources[@]} " =~ " ${resource} " ]]; then
-        resource=$(kubectl api-resources --no-headers | awk '{print $1}' | fzf --prompt "Resource: ")
+        resource=$(kubectl api-resources --no-headers | fzf --prompt "Resource: ")
+        resource=$(echo "$resource" | awk '{print $1}')
     fi
 }
 
@@ -143,26 +145,29 @@ select_action() {
 # function that takes the kubectl output and runs fzf on the names
 name_fzf() {
     # if `kubectl get` fails, the error message is suppressed and the script continues
-    output=$(kubectl get $resource $query_namespace --no-headers 2>&1) || true
+    output=$(kubectl get $resource $query_namespace 2>&1) || true
     if [[ -z "$output" ]]; then
         exit 1
-    elif [[ $namespace == "A" ]]; then
-        output=$(echo "$output" | awk '{print $1}')
-        name=$(echo "$output" | fzf --prompt "$resource: ")
-        if [ -t 1 ]; then
-            # Output is a terminal, print the selected resource
-            green_text "Selected $resource: $name\n"
-        fi
-    # if the resource doesn't exist in the namespace, send error message
     elif [[ $output =~ "No resources found" ]]; then
         red_text "The resource $resource does not exist in the namespace $namespace."
         exit 1
+    elif [[ $query_namespace == "-A" ]]; then
+        :
+    elif ! [[ -z $query_namespace ]]; then
+        :
     else
-        output=$(echo "$output" | awk '{print $1}')
-        name=$(echo "$output" | fzf --prompt "$resource: ")
+        headers=$(echo "$output" | head -n 1)
+        output=$(echo "$output" | tail -n +1)
+        namespace_index=$(echo "$headers" | awk '{for(i=1; i<=NF; i++) if ($i == "NAMESPACE") print i}')
+        name_index=$(echo "$headers" | awk '{for(i=1; i<=NF; i++) if ($i == "NAME") print i}')
+        selected_line=$(echo "$output" | fzf --prompt "$resource: ")
+        name=$(echo "$selected_line" | awk -v idx="$name_index" 'BEGIN{FS=" +"} {print $idx}')
+        namespace=$(echo "$selected_line" | awk -v idx="$namespace_index" 'BEGIN{FS=" +"} {print $idx}')
+        query_namespace="-n $namespace"
+        
         if [ -t 1 ]; then
             # Output is a terminal, print the selected resource
-            green_text "Selected $resource: $name\n"
+            green_text "Selected $resource: $name"
         fi
     fi
 }
