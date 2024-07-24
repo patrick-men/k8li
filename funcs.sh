@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#######################################################################################################################
+## For debugging: use set -x at the beginning of the script and/or remove all 2> redirects to see the error messages ##
+#######################################################################################################################
+
 #TOOD: refactor the if [ -t 1] > this is a check to see if the output is a terminal, required to be able to pipe the outputs into anything
 
 # functions to add color to outputs
@@ -158,11 +162,12 @@ name_fzf() {
     else
         headers=$(echo "$output" | head -n 1)
         output=$(echo "$output" | tail -n +1)
-        namespace_index=$(echo "$headers" | awk '{for(i=1; i<=NF; i++) if ($i == "NAMESPACE") print i}')
-        name_index=$(echo "$headers" | awk '{for(i=1; i<=NF; i++) if ($i == "NAME") print i}')
+        namespace_index=$(echo "$headers" | awk '{for(i=1; i<=NF; i++) if ($i == "NAMESPACE") print i}' 2>/dev/null)
+        name_index=$(echo "$headers" | awk '{for(i=1; i<=NF; i++) if ($i == "NAME") print i}' 2>/dev/null)
         selected_line=$(echo "$output" | fzf --prompt "$resource: ")
-        name=$(echo "$selected_line" | awk -v idx="$name_index" 'BEGIN{FS=" +"} {print $idx}')
-        namespace=$(echo "$selected_line" | awk -v idx="$namespace_index" 'BEGIN{FS=" +"} {print $idx}')
+        name=$(echo "$selected_line" | awk -v idx="$name_index" 'BEGIN{FS=" +"} {print $idx}' 2>/dev/null)
+        namespace=$(echo "$selected_line" | awk -v idx="$namespace_index" 'BEGIN{FS=" +"} {print $idx}' 2>/dev/null)        
+        
         if [[ $query_namespace == "" ]]; then
             :
         else
