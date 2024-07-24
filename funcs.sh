@@ -150,15 +150,16 @@ select_action() {
 name_fzf() {
     # if `kubectl get` fails, the error message is suppressed and the script continues
     output=$(kubectl get $resource $query_namespace 2>&1) || true
-    if [[ -z "$output" ]]; then
+    
+    if [[ $action == "g" || $action == "get" ]]; then
+        name=""
+    elif [[ -z "$output" ]]; then
         exit 1
     elif [[ $output =~ "No resources found" ]]; then
         red_text "The resource $resource does not exist in the namespace $namespace."
         exit 1
     elif [[ $query_namespace == "-A" ]]; then
         :
-    # elif ! [[ $query_namespace == "" ]]; then
-    #     :
     else
         headers=$(echo "$output" | head -n 1)
         output=$(echo "$output" | tail -n +1)
@@ -170,7 +171,7 @@ name_fzf() {
         
         if [[ $query_namespace == "" ]]; then
             :
-        else
+        elif ! [[ $namespace == "" ]]; then
             query_namespace="-n $namespace"
         fi
 
