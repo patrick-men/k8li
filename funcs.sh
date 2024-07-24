@@ -2,6 +2,8 @@
 
 #TOOD: refactor the if [ -t 1] > this is a check to see if the output is a terminal, required to be able to pipe the outputs into anything
 
+set -x
+
 # functions to add color to outputs
 color_reset=$(tput sgr0)
 red=$(tput setaf 1)
@@ -153,8 +155,8 @@ name_fzf() {
         exit 1
     elif [[ $query_namespace == "-A" ]]; then
         :
-    elif ! [[ -z $query_namespace ]]; then
-        :
+    # elif ! [[ $query_namespace == "" ]]; then
+    #     :
     else
         headers=$(echo "$output" | head -n 1)
         output=$(echo "$output" | tail -n +1)
@@ -163,8 +165,12 @@ name_fzf() {
         selected_line=$(echo "$output" | fzf --prompt "$resource: ")
         name=$(echo "$selected_line" | awk -v idx="$name_index" 'BEGIN{FS=" +"} {print $idx}')
         namespace=$(echo "$selected_line" | awk -v idx="$namespace_index" 'BEGIN{FS=" +"} {print $idx}')
-        query_namespace="-n $namespace"
-        
+        if [[ $query_namespace == "" ]]; then
+            :
+        else
+            query_namespace="-n $namespace"
+        fi
+
         if [ -t 1 ]; then
             # Output is a terminal, print the selected resource
             green_text "Selected $resource: $name"
