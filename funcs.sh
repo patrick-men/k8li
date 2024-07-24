@@ -2,8 +2,6 @@
 
 #TOOD: refactor the if [ -t 1] > this is a check to see if the output is a terminal, required to be able to pipe the outputs into anything
 
-set -x
-
 # functions to add color to outputs
 color_reset=$(tput sgr0)
 red=$(tput setaf 1)
