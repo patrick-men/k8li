@@ -151,7 +151,7 @@ name_fzf() {
     # if `kubectl get` fails, the error message is suppressed and the script continues
     output=$(kubectl get $resource $query_namespace 2>&1) || true
     
-    if [[ $action == "g" || $action == "get" || $action == "w" || $action == "wide" ]]; then
+    if [[ $action == "g" || $action == "get" || $action == "w" || $action == "wide" || $action == "f" || $action == "follow" ]]; then
         name=""
     elif [[ -z "$output" ]]; then
         exit 1
