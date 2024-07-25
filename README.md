@@ -15,6 +15,7 @@ Actions: The available arguments are the respective kubectl actions. The followi
   h, help               Show this help message
   w, wide               Show more information
   g, get                Get a resource
+  e, edit               Edit a resource
   l, logs               Show logs for a resource
   d, describe           Describe a resource
   b, bash               Open a bash shell in a pod
@@ -34,6 +35,9 @@ Resources:
   secret                Interact with a secret
   cm, configmap         Interact with a configmap
   tenant                Interact with a tenant
+  ma, machine           Interact with a machine
+  ms, machineset        Interact with a machineset
+  md, machinedeployment Interact with a machinedeployment
   other, typo           Opens a fzf for you to pick your resource
 
 Namespace:

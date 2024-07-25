@@ -39,6 +39,7 @@ display_help() {
     yellow_text "  h, help               Show this help message"
     yellow_text "  w, wide               Show more information"
     yellow_text "  g, get                Get a resource"
+    yellow_text "  e, edit               Edit a resource"
     yellow_text "  l, logs               Show logs for a resource"
     yellow_text "  d, describe           Describe a resource"
     yellow_text "  b, bash               Open a bash shell in a pod"
@@ -58,6 +59,9 @@ display_help() {
     yellow_text "  secret                Interact with a secret"
     yellow_text "  cm, configmap         Interact with a configmap"
     yellow_text "  tenant                Interact with a tenant"
+    yellow_text "  ma, machine           Interact with a machine"
+    yellow_text "  ms, machineset        Interact with a machineset"
+    yellow_text "  md, machinedeployment Interact with a machinedeployment"
     echo 
     yellow_text "  any other resource    Opens a fzf for you to pick your resource"
     echo
@@ -199,6 +203,12 @@ execute_action() {
             blue_text "Command: kubectl get $resource $name $query_namespace\n"
         fi
         kubectl get $resource $name $query_namespace 2>/tmp/k8li-error$timestamp || red_text "The command failed. Please check /tmp/k8li-error$timestamp for the error message."
+        ;;
+    "e" | "edit")
+        if [ -t 1 ]; then
+            blue_text "Command: kubectl edit $resource $name $query_namespace\n"
+        fi
+        kubectl edit $resource $name $query_namespace 2>/tmp/k8li-error$timestamp || red_text "The command failed. Please check /tmp/k8li-error$timestamp for the error message."
         ;;
     "l" | "logs")
         if [ -t 1 ]; then
