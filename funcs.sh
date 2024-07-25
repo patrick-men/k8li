@@ -3,7 +3,7 @@
 #######################################################################################################################
 ## For debugging: use set -x at the beginning of the script and/or remove all 2> redirects to see the error messages ##
 #######################################################################################################################
-set -x
+
 #TOOD: refactor the if [ -t 1] > this is a check to see if the output is a terminal, required to be able to pipe the outputs into anything
 
 # functions to add color to outputs
