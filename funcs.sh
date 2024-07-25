@@ -3,7 +3,7 @@
 #######################################################################################################################
 ## For debugging: use set -x at the beginning of the script and/or remove all 2> redirects to see the error messages ##
 #######################################################################################################################
-
+set -x
 #TOOD: refactor the if [ -t 1] > this is a check to see if the output is a terminal, required to be able to pipe the outputs into anything
 
 # functions to add color to outputs
@@ -214,7 +214,7 @@ execute_action() {
         if [ -t 1 ]; then
             blue_text "Command: kubectl logs $name $query_namespace\n"
         fi
-        kubectl logs $resource $name $query_namespace 2>/tmp/k8li-error$timestamp || red_text "The command failed. Please check /tmp/k8li-error$timestamp for the error message."
+        kubectl logs $resource/$name $query_namespace 2>/tmp/k8li-error$timestamp || red_text "The command failed. Please check /tmp/k8li-error$timestamp for the error message."
         ;;
     "d" | "describe")
         if [ -t 1 ]; then
