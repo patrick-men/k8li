@@ -34,6 +34,7 @@ Resources:
   no, node              Interact with a node
   secret                Interact with a secret
   cm, configmap         Interact with a configmap
+  ds, daemonset         Interact with a daemonset
   tenant                Interact with a tenant
   ma, machine           Interact with a machine
   ms, machineset        Interact with a machineset

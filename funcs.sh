@@ -58,6 +58,7 @@ display_help() {
     yellow_text "  no, node              Interact with a node"
     yellow_text "  secret                Interact with a secret"
     yellow_text "  cm, configmap         Interact with a configmap"
+    yellow_text "  ds, daemonset         Interact with a daemonset"
     yellow_text "  tenant                Interact with a tenant"
     yellow_text "  ma, machine           Interact with a machine"
     yellow_text "  ms, machineset        Interact with a machineset"
